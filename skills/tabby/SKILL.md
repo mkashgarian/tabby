@@ -1,5 +1,5 @@
 ---
-name: receipt-to-ynab
+name: tabby
 description: Splits a photographed/scanned receipt into a user's YNAB (You Need A Budget) categories, itemized and reconciled to the exact amount paid. Trigger this whenever the user uploads or mentions a receipt and wants it categorized, split, broken down, or entered for YNAB or budgeting purposes -- e.g. "split this receipt", "categorize this Target receipt for YNAB", "how should I budget this", or any photo of a receipt paired with a request to break down spending. Handles per-item discounts and proportional sales tax splitting. Always asks the user rather than guessing when an item's category is unclear.
 ---
 

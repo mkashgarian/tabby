@@ -1,0 +1,8 @@
+{
+  "name": "tabby",
+  "description": "Splits a photographed receipt into your YNAB categories, itemized and reconciled to the exact amount paid.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Marina Kashgarian"
+  }
+}

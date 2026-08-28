@@ -19,7 +19,7 @@ Desktop / other environments where you control network egress settings,
 add api.ynab.com to the allowlist and this will work normally.
 
 Usage:
-    export YNAB_TOKEN="your-personal-access-token"
+    export YNAB_TOKEN="your-personal-access-token"   # or set it in a .env file
     python3 fetch_ynab_categories.py                 # lists your budgets
     python3 fetch_ynab_categories.py <budget_id>      # fetches + caches categories
 
@@ -33,6 +33,8 @@ import sys
 import urllib.request
 import urllib.error
 from datetime import datetime, timezone
+
+from _env import load_dotenv
 
 API_BASE = "https://api.ynab.com/v1"
 CACHE_PATH = os.path.expanduser("~/.cache/ynab_categories.json")
@@ -84,6 +86,7 @@ def fetch_categories(budget_id, token):
 
 
 def main():
+    load_dotenv()
     token = os.environ.get("YNAB_TOKEN")
     if not token:
         print("Set YNAB_TOKEN in your environment first (your YNAB Personal Access Token).")

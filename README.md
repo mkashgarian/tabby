@@ -16,13 +16,52 @@ Give it a receipt photo and your YNAB category list, and it will:
 
 ## Setup
 
-1. Copy `receipt-to-ynab/` into your Claude Code skills directory (e.g.
-   `~/.claude/skills/`).
-2. Get a YNAB Personal Access Token: YNAB web app -> Account Settings ->
-   Developer Settings -> New Token.
-3. Export it before use: `export YNAB_TOKEN="your-token"`.
+### Install the plugin (recommended)
 
-See [receipt-to-ynab/SKILL.md](receipt-to-ynab/SKILL.md) for the full
+Inside Claude Code:
+
+```
+/plugin marketplace add mkashgarian/tabby
+/plugin install tabby@tabby
+```
+
+That's it -- no manual file copying, and `/plugin marketplace update tabby`
+pulls future updates.
+
+### Or install manually
+
+1. Copy `skills/tabby/` into your Claude Code skills directory (e.g.
+   `~/.claude/skills/`).
+
+### Then, either way: set your YNAB token
+
+1. Get a YNAB Personal Access Token: YNAB web app -> Account Settings ->
+   Developer Settings -> New Token. Treat this like a password -- anyone
+   with it can read and write your budget.
+2. Give the scripts your token, either way works:
+   - **`.env` file (recommended):** inside the installed `tabby` skill
+     folder, copy `.env.example` to `.env` and fill in your token:
+     ```bash
+     cp .env.example .env
+     ```
+     then edit `.env` and set `YNAB_TOKEN=...`. The scripts load this
+     automatically -- no shell config needed, and `.env` is already in
+     `.gitignore` so it won't get committed.
+   - **Shell environment variable:** `export YNAB_TOKEN="your-token"` in
+     your `.zshrc`/`.bashrc` or before each session. An `export` you've
+     already done always wins over `.env` if both are set.
+
+### A note on network access
+
+The scripts need outbound access to `api.ynab.com` to fetch categories,
+accounts, and create transactions. Some sandboxed environments (including
+claude.ai's default tool sandbox) block outbound network to hosts that
+aren't allowlisted, which will make the API calls fail with a connection
+error. If that happens, either allow `api.ynab.com` in that environment's
+network settings, or just paste your category list into chat and enter the
+split into YNAB manually -- the skill is designed to fall back to that.
+
+See [skills/tabby/SKILL.md](skills/tabby/SKILL.md) for the full
 workflow and script details.
 
 ## Scripts

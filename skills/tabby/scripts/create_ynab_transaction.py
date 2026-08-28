@@ -19,7 +19,7 @@ fetch_ynab_categories.py (~/.cache/ynab_categories.json). Run that script
 first (for the same budget) if the cache is missing or stale.
 
 Usage:
-    export YNAB_TOKEN="your-personal-access-token"
+    export YNAB_TOKEN="your-personal-access-token"   # or set it in a .env file
     python3 create_ynab_transaction.py --dry-run < input.json
     python3 create_ynab_transaction.py < input.json
 
@@ -44,6 +44,8 @@ import os
 import sys
 import urllib.request
 import urllib.error
+
+from _env import load_dotenv
 
 API_BASE = "https://api.ynab.com/v1"
 CATEGORY_CACHE_PATH = os.path.expanduser("~/.cache/ynab_categories.json")
@@ -141,6 +143,7 @@ def main():
         print(json.dumps(payload, indent=2))
         return
 
+    load_dotenv()
     token = os.environ.get("YNAB_TOKEN")
     if not token:
         print("Set YNAB_TOKEN in your environment first (your YNAB Personal Access Token).")

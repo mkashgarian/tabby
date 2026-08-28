@@ -1,0 +1,13 @@
+{
+  "name": "tabby",
+  "owner": {
+    "name": "Marina Kashgarian"
+  },
+  "plugins": [
+    {
+      "name": "tabby",
+      "source": "./",
+      "description": "Splits a photographed receipt into your YNAB categories, itemized and reconciled to the exact amount paid."
+    }
+  ]
+}

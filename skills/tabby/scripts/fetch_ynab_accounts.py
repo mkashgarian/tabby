@@ -16,7 +16,7 @@ script will fail with a connection error -- in that situation, ask the
 user which account to use instead.
 
 Usage:
-    export YNAB_TOKEN="your-personal-access-token"
+    export YNAB_TOKEN="your-personal-access-token"   # or set it in a .env file
     python3 fetch_ynab_accounts.py <budget_id>
 
 Cache is written to ~/.cache/ynab_accounts.json with a timestamp.
@@ -27,6 +27,8 @@ import sys
 import urllib.request
 import urllib.error
 from datetime import datetime, timezone
+
+from _env import load_dotenv
 
 API_BASE = "https://api.ynab.com/v1"
 CACHE_PATH = os.path.expanduser("~/.cache/ynab_accounts.json")
@@ -66,6 +68,7 @@ def fetch_accounts(budget_id, token):
 
 
 def main():
+    load_dotenv()
     token = os.environ.get("YNAB_TOKEN")
     if not token:
         print("Set YNAB_TOKEN in your environment first (your YNAB Personal Access Token).")
