@@ -39,15 +39,22 @@ python3 scripts/fetch_ynab_categories.py <budget_id> # then: fetches + caches ca
   it into a command yourself.** A token pasted into chat or typed into a
   shell command is exposed in the session transcript/history -- treat that
   as unacceptable, not just undesirable.
-- If the script fails because `YNAB_TOKEN` isn't set, tell the user to set
-  it themselves, outside the chat, one of two ways:
-  - Preferred: create a `.env` file next to the scripts (copy
-    `.env.example` to `.env`) and put `YNAB_TOKEN=...` in it.
-  - Or: `export YNAB_TOKEN="..."` in their shell before running Claude.
-  Point them to where to get a token if they don't have one yet: YNAB web
-  app -> Account Settings -> Developer Settings -> New Token. Then ask them
-  to say when it's set so you can retry -- don't proceed on a token they've
-  typed into the conversation.
+- If the script fails because `YNAB_TOKEN` isn't set, offer the user a
+  choice rather than just blocking on it:
+  1. **Set up a token** so you can look up categories/accounts live and
+     optionally post the transaction later. Tell them how: create a `.env`
+     file next to the scripts (copy `.env.example` to `.env`) and put
+     `YNAB_TOKEN=...` in it, or `export YNAB_TOKEN="..."` in their shell --
+     either way, outside the chat. Point them to where to get one: YNAB web
+     app -> Account Settings -> Developer Settings -> New Token. Ask them to
+     say when it's set so you can retry -- don't proceed on a token they've
+     typed into the conversation.
+  2. **Skip the API entirely.** If they don't have or don't want to set up
+     a token, that's a completely valid choice -- ask them to paste their
+     category list instead (see the network-fallback bullet below for the
+     same pattern), do the full split, and present the breakdown. Just skip
+     Step 8 (entering it into YNAB) since that needs the live API -- tell
+     them the split is ready for them to enter manually.
 - If this environment's network doesn't allow reaching `api.ynab.com`
   (common in claude.ai's default sandbox -- you'll see a connection/allowlist
   error), tell the user plainly that live lookup isn't available here, and
@@ -169,7 +176,10 @@ visualization tool for a short list like this.
 ## Step 8: Entering it into YNAB (optional, ask first)
 
 Only do this if the user explicitly asks you to enter the transaction, not
-automatically. Creating a transaction writes to their real budget, so:
+automatically -- if they never set up a `YNAB_TOKEN`, or they set one up but
+just want the breakdown, Step 7 is a perfectly fine place to stop; don't
+push them toward connecting the API. Creating a transaction writes to their
+real budget, so:
 
 - Confirm the payee, date, account, and the exact split before writing
   anything.
