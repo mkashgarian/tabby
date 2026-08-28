@@ -26,18 +26,28 @@ transaction.
 
 ## Step 1: Get YNAB categories
 
-Try the live API first:
+Try the live API first -- the scripts read `YNAB_TOKEN` from the real
+environment or from a `.env` file next to them (see `scripts/_env.py`), so
+just run them:
 
 ```bash
-export YNAB_TOKEN="<user's personal access token>"
 python3 scripts/fetch_ynab_categories.py            # first call: lists budgets
 python3 scripts/fetch_ynab_categories.py <budget_id> # then: fetches + caches categories
 ```
 
-- If the user hasn't given you a token yet, ask for it and tell them where
-  to get one: YNAB web app -> Account Settings -> Developer Settings -> New
-  Token. Treat the token as a secret: don't print it back, don't put it
-  anywhere but the environment variable for this call.
+- **Never ask the user to paste their YNAB token into chat, and never type
+  it into a command yourself.** A token pasted into chat or typed into a
+  shell command is exposed in the session transcript/history -- treat that
+  as unacceptable, not just undesirable.
+- If the script fails because `YNAB_TOKEN` isn't set, tell the user to set
+  it themselves, outside the chat, one of two ways:
+  - Preferred: create a `.env` file next to the scripts (copy
+    `.env.example` to `.env`) and put `YNAB_TOKEN=...` in it.
+  - Or: `export YNAB_TOKEN="..."` in their shell before running Claude.
+  Point them to where to get a token if they don't have one yet: YNAB web
+  app -> Account Settings -> Developer Settings -> New Token. Then ask them
+  to say when it's set so you can retry -- don't proceed on a token they've
+  typed into the conversation.
 - If this environment's network doesn't allow reaching `api.ynab.com`
   (common in claude.ai's default sandbox -- you'll see a connection/allowlist
   error), tell the user plainly that live lookup isn't available here, and
