@@ -6,14 +6,15 @@ Handles per-item discounts and proportional sales tax splitting.
 
 ## What it does
 
-Give it a receipt photo and your YNAB category list, and it will:
+Give it a receipt photo and it will:
 
 1. Extract every line item (name, price, discount, quantity).
 2. Reconcile the receipt math before categorizing anything.
-3. Assign each item to a YNAB category, asking you about anything ambiguous.
-4. Compute the proportional tax split and final category totals.
-5. Optionally create the split transaction directly in YNAB via the API.
-
+3. Pull categories directly from your YNAB budget (or use cached categories).
+4. Assign each item to a YNAB category, looking up any vague line items and asking you about how to categorize anything ambiguous.
+5. Compute the proportional tax split and final category totals.
+6. Optionally create the split transaction directly in YNAB via the API. Searches for an existing transaction and creates one if not found.
+   
 ## Setup
 
 ### Install the plugin (recommended)
