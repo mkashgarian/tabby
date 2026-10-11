@@ -1,6 +1,6 @@
 ---
 name: tabby
-description: Splits a photographed/scanned receipt into a user's YNAB (You Need A Budget) categories, itemized and reconciled to the exact amount paid. Trigger this whenever the user uploads or mentions a receipt and wants it categorized, split, broken down, or entered for YNAB or budgeting purposes -- e.g. "split this receipt", "categorize this Target receipt for YNAB", "how should I budget this", or any photo of a receipt paired with a request to break down spending. Handles per-item discounts and proportional sales tax splitting. Always asks the user rather than guessing when an item's category is unclear.
+description: Splits a photographed/scanned receipt into a user's YNAB (You Need A Budget) categories, itemized and reconciled to the exact amount paid. Trigger this whenever the user uploads or mentions a receipt and wants it categorized, split, broken down, or entered for YNAB or budgeting purposes -- e.g. "split this receipt", "categorize this Target receipt for YNAB", "how should I budget this", or any photo of a receipt paired with a request to break down spending. Handles per-item discounts, proportional or per-tax-rate sales tax splitting, and splitting a transaction that's already in YNAB. Always asks the user rather than guessing when an item's category is unclear.
 ---
 
 # Receipt to YNAB Category Splitter
@@ -17,10 +17,12 @@ transaction.
 4. Reconcile the receipt math before doing anything else.
 5. Assign each item to a YNAB category. Ask about anything ambiguous --
    never guess silently.
-6. Run `scripts/calculate_split.py` to compute the proportional tax split
+6. Run `scripts/calculate_split.py` to compute the tax split
    and final category totals (don't hand-calculate the money math).
 7. Present the itemized list + category totals to the user.
-8. Optionally enter it into YNAB via `scripts/create_ynab_transaction.py`,
+8. Optionally enter it into YNAB -- splitting the existing transaction via
+   `scripts/update_ynab_transaction.py` if the bank already imported it, else
+   creating one via `scripts/create_ynab_transaction.py` --
    dry-run first (only with explicit confirmation -- this writes financial
    data to their account).
 
@@ -92,6 +94,12 @@ For each line, capture:
 - Discount, if the receipt shows one applied to that line (e.g. a markdown,
   coupon, loyalty discount, "you saved $X" line tied to a specific item)
 - Quantity, if more than 1
+- Tax code, if the receipt prints one per line (e.g. Costco's `A`/`E`,
+  Walmart's `X`/`N`/`O`). Different codes usually mean different tax rates
+  -- e.g. NC taxes groceries at 2% and everything else at ~7%. A code
+  printed in the left margin vs. after the price can mean different things
+  (on Costco receipts the right-hand letter is the tax code), so use the one
+  next to the price.
 
 **Cryptic item names:** grocery and big-box receipts often abbreviate items
 (e.g. "GV FRZ VEG"). If a name isn't decipherable, web search
@@ -149,10 +157,38 @@ echo '{
 }' | python3 scripts/calculate_split.py
 ```
 
+**If the receipt has more than one tax code**, split tax by rate rather
+than proportionally -- otherwise reduced-rate items like groceries get
+charged far too much tax. Add `"tax_code"` to every item and a top-level
+`"tax_rates"` map:
+
+```bash
+echo '{
+  "store": "Costco",
+  "items": [
+    {"name": "Butter", "price": 10.99, "discount": 0, "category": "Groceries", "tax_code": "E"},
+    {"name": "Mouthwash", "price": 13.99, "discount": 0, "category": "Sundries", "tax_code": "A"}
+  ],
+  "tax_rates": {"A": 0.075, "E": 0.02},
+  "tax": 1.27,
+  "total_paid": 26.25
+}' | python3 scripts/calculate_split.py
+```
+
+- Get the rates from the receipt's footer if it lists them; otherwise look
+  up the combined sales tax rate for the store's city/county and that
+  state's reduced food rate (if any), and confirm which code is which.
+- Check `rate_based_tax_estimate` in the output against the receipt's tax.
+  Within a few cents means the rates and codes are right (the script scales
+  away the rounding difference). If it's further off, the rates or codes
+  are wrong -- tell the user and ask rather than going ahead.
+- When you present the results, mention that tax was split by rate.
+
 Notes on the script's behavior:
-- Tax is split proportionally across categories based on each category's
-  share of the post-discount, pre-tax subtotal (not equally per category,
-  and not per item).
+- Without `tax_rates`, tax is split proportionally across categories based
+  on each category's share of the post-discount, pre-tax subtotal (not
+  equally per category, and not per item). That's exact when everything is
+  taxed at one rate.
 - `price` is the pre-discount line price; `discount` is the dollar amount
   taken off that line.
 - If your inputs don't already balance to the exact total (rare rounding
@@ -183,6 +219,10 @@ real budget, so:
 
 - Confirm the payee, date, account, and the exact split before writing
   anything.
+- **Check for an existing transaction first.** If the account has a bank
+  feed, YNAB has often already imported the purchase, and creating another
+  one would double-count it. See "Splitting an existing transaction" below;
+  only create a new one if nothing matches.
 - You need `budget_id`, `account_id` (from Step 1), `payee_name`, and `date`
   in addition to the `category_totals` / `total_paid` that
   `calculate_split.py` already produced. Ask the user for any of these you
@@ -214,6 +254,33 @@ real budget, so:
 
 - If network access to `api.ynab.com` isn't available in this environment,
   say so and give the user the split so they can enter it manually instead.
+
+### Splitting an existing transaction
+
+`scripts/update_ynab_transaction.py` takes the same JSON as
+`create_ynab_transaction.py`. First look for a match (read-only -- same
+account, same amount, within 3 days of `date`):
+
+```bash
+echo '{ ... same JSON ... }' | python3 scripts/update_ynab_transaction.py --find
+```
+
+- If exactly one matches, tell the user what you found (date, payee, its
+  current category, whether it's approved) and that you'd replace its
+  category with the split. If several match, ask which one.
+- Add its id as `"transaction_id"`, dry-run, read the payload back to the
+  user, and only with a clear go-ahead run it for real:
+
+  ```bash
+  echo '{ ..., "transaction_id": "<id>" }' | python3 scripts/update_ynab_transaction.py --dry-run
+  echo '{ ..., "transaction_id": "<id>" }' | python3 scripts/update_ynab_transaction.py
+  ```
+
+- This keeps the transaction's date, payee, account and amount, replaces
+  its category with the split, and marks it approved. It refuses if the
+  amount doesn't match `total_paid`, or if the transaction is already split
+  (YNAB's API can't change an existing split -- the user has to un-split it
+  in YNAB first).
 
 ## Edge cases worth remembering
 

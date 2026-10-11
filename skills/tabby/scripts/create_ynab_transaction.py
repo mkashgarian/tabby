@@ -80,9 +80,8 @@ def load_category_ids(budget_id):
     return by_name
 
 
-def build_payload(data):
-    budget_id = data["budget_id"]
-    by_name = load_category_ids(budget_id)
+def build_subtransactions(data):
+    by_name = load_category_ids(data["budget_id"])
 
     subtransactions = []
     for category_name, amount in data["category_totals"].items():
@@ -96,6 +95,12 @@ def build_payload(data):
             "category_id": match["id"],
             "memo": category_name,
         })
+    return subtransactions
+
+
+def build_payload(data):
+    budget_id = data["budget_id"]
+    subtransactions = build_subtransactions(data)
 
     transaction = {
         "account_id": data["account_id"],

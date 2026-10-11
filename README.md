@@ -2,7 +2,7 @@
 
 A Claude Code skill that splits a photographed receipt into your YNAB (You
 Need A Budget) categories, itemized and reconciled to the exact amount paid.
-Handles per-item discounts and proportional sales tax splitting.
+Handles per-item discounts, proportional or per-tax-rate sales tax splitting, and splitting a transaction that's already in YNAB.
 
 ## What it does
 
@@ -12,8 +12,8 @@ Give it a receipt photo and it will:
 2. Reconcile the receipt math before categorizing anything.
 3. Pull categories directly from your YNAB budget (or use cached categories).
 4. Assign each item to a YNAB category, looking up any vague line items and asking you about how to categorize anything ambiguous.
-5. Compute the proportional tax split and final category totals.
-6. Optionally create the split transaction directly in YNAB via the API. Searches for an existing transaction and creates one if not found.
+5. Compute the tax split (by tax rate when the receipt has more than one) and final category totals.
+6. Optionally enter it in YNAB via the API: splits the existing transaction if your bank already imported it, otherwise creates a new one.
    
 ## Setup
 
@@ -69,5 +69,6 @@ workflow and script details.
 
 - `scripts/fetch_ynab_categories.py` -- fetch and cache your budget's categories
 - `scripts/fetch_ynab_accounts.py` -- fetch and cache your budget's accounts
-- `scripts/calculate_split.py` -- compute the proportional tax/category split
+- `scripts/calculate_split.py` -- compute the tax/category split, proportionally or by per-item tax code
 - `scripts/create_ynab_transaction.py` -- create the split transaction in YNAB (dry-run supported)
+- `scripts/update_ynab_transaction.py` -- find a transaction YNAB already imported and split it (dry-run supported)
